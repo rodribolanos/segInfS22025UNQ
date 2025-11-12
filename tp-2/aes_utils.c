@@ -1,9 +1,14 @@
+#include "aes_utils.h"
+#include "array_rotation.h"
+#include "string.h"
+
 unsigned char s_box[256] = {
     0x63,   0x7c,   0x77,   0x7b,   0xf2,   0x6b,   0x6f,   0xc5,   0x30,   0x01,   0x67,   0x2b,   0xfe,   0xd7,   0xab,   0x76,
     0xca,   0x82,   0xc9,   0x7d,   0xfa,   0x59,   0x47,   0xf0,   0xad,   0xd4,   0xa2,   0xaf,   0x9c,   0xa4,   0x72,   0xc0,
     0xb7,   0xfd,   0x93,   0x26,   0x36,   0x3f,   0xf7,   0xcc,   0x34,   0xa5,   0xe5,   0xf1,   0x71,   0xd8,   0x31,   0x15,
     0x04,   0xc7,   0x23,   0xc3,   0x18,   0x96,   0x05,   0x9a,   0x07,   0x12,   0x80,   0xe2,   0xeb,   0x27,   0xb2,   0x75,
     0x09,   0x83,   0x2c,   0x1a,   0x1b,   0x6e,   0x5a,   0xa0,   0x52,   0x3b,   0xd6,   0xb3,   0x29,   0xe3,   0x2f,   0x84,
+     
     0x53,   0xd1,   0x00,   0xed,   0x20,   0xfc,   0xb1,   0x5b,   0x6a,   0xcb,   0xbe,   0x39,   0x4a,   0x4c,   0x58,   0xcf,
     0xd0,   0xef,   0xaa,   0xfb,   0x43,   0x4d,   0x33,   0x85,   0x45,   0xf9,   0x02,   0x7f,   0x50,   0x3c,   0x9f,   0xa8,
     0x51,   0xa3,   0x40,   0x8f,   0x92,   0x9d,   0x38,   0xf5,   0xbc,   0xb6,   0xda,   0x21,   0x10,   0xff,   0xf3,   0xd2,
@@ -17,9 +22,91 @@ unsigned char s_box[256] = {
     0x8c,   0xa1,   0x89,   0x0d,   0xbf,   0xe6,   0x42,   0x68,   0x41,   0x99,   0x2d,   0x0f,   0xb0,   0x54,   0xbb,   0x16
 };
  
-unsigned char mix_col_matrix[BLOCK_SIDE][BLOCK_SIDE] = {
-    { 0x02, 0x03, 0x01, 0x01 }, // 0000 0010 0000 0011 0000 0001 0000 0001 
-    { 0x01, 0x02, 0x03, 0x01 }, // 0000 0001 0000 0010 0000 0011 0000 0001
-    { 0x01, 0x01, 0x02, 0x03 }, // 0000 0001 0000 0001 0000 0010 0000 0011
-    { 0x03, 0x01, 0x01, 0x02 } // 0000 0011 0000 0001 0000 0001 0000 0010
+unsigned char mix_col_matrix[BLOCK_DIM][BLOCK_DIM] = {
+    { 0x02, 0x03, 0x01, 0x01 },  
+    { 0x01, 0x02, 0x03, 0x01 }, 
+    { 0x01, 0x01, 0x02, 0x03 }, 
+    { 0x03, 0x01, 0x01, 0x02 } 
 };
+
+unsigned char closedMult(unsigned char a, unsigned char b){
+
+    unsigned char p = 0;
+
+    for(int i = 0; i < 8; i++){
+        /* 
+            La invariante es que a*b + p va a ser el producto en cada instancia del loop
+            y solo se suma en los casos en que b sea impar
+        */
+
+        if(b & 0x01){ 
+           p ^= a; 
+        } 
+
+        b >>= 1; // divide por x
+
+
+        unsigned char carry = a & 0x80;
+        a <<= 1; // multiplica por x
+        
+        // si x^7 era 1 entonces se esta saliendo de los 8 bits al multiplicar por x por lo que se aplica el modulo con el primitivo
+        if (carry){ 
+            a ^= AES_PRIMITIVE; 
+        }
+    }
+    /*
+    0001 1010 1000
+    0001 0001 1011
+    como + = - = mod = xor
+    0000 1011 0011
+    */
+    
+    return p;
+
+}
+
+
+void addRoundKey(unsigned char state[BLOCK_DIM][BLOCK_DIM], unsigned char expanded_key[BLOCK_DIM][BLOCK_DIM]){
+    // la suma de la clave al bloque cifrado
+    for(int i = 0; i < BLOCK_DIM; i++){
+        for(int j = 0; j < BLOCK_DIM; j++){
+            state[i][j] ^= expanded_key[i][j]; 
+        }
+    }
+}
+
+void subBytes(unsigned char state[BLOCK_DIM][BLOCK_DIM]){
+    // sustitucion de byte por el inverso multiplicativo
+    for(int i = 0; i < BLOCK_DIM; i++){
+        for(int j = 0; j < BLOCK_DIM; j++){
+            state[i][j] = s_box[state[i][j]]; 
+        }
+    }
+}
+
+
+void shiftRows(unsigned char state[BLOCK_DIM][BLOCK_DIM]){
+    for(int i = 1; i < BLOCK_DIM; i++){
+        leftRotate(state[i], i, BLOCK_DIM); 
+    }
+}
+
+
+void mixColumns(unsigned char state[BLOCK_DIM][BLOCK_DIM]){
+    // mix_col_matrix * state
+    unsigned char acc[BLOCK_DIM][BLOCK_DIM];
+
+    for(int i = 0; i < BLOCK_DIM; i++){
+        for(int j = 0; j < BLOCK_DIM; j++){
+            
+            acc[i][j] = 0x00;
+
+            for(int h = 0; h < BLOCK_DIM; h++){
+                acc[i][j] ^= closedMult(mix_col_matrix[i][h], state[h][j]);
+            }
+
+        }
+    }
+
+    memcpy(state, acc, BLOCK_DIM * BLOCK_DIM * sizeof(unsigned char));
+}
