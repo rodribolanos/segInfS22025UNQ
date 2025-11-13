@@ -108,5 +108,52 @@ void mixColumns(unsigned char state[BLOCK_DIM][BLOCK_DIM]){
         }
     }
 
-    memcpy(state, acc, BLOCK_DIM * BLOCK_DIM * sizeof(unsigned char));
+    memcpy(state, acc, BLOCK_DIM * BLOCK_DIM * sizeof(unsigned char)); // se podria usar un for tmb
+}
+
+// PRECOND: La key se expandió en subkeys por medio del algoritmo
+void cipher_block(unsigned char *in_text, int n, unsigned char subkeys[][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]){
+    
+    // SETUP 
+    unsigned char state[BLOCK_DIM][BLOCK_DIM];
+    
+    int index = 0;
+    for(int i = 0; i < BLOCK_DIM; i++){
+        for(int j = 0; j < BLOCK_DIM; j++){
+            if(index < n){
+                state[i][j] = in_text[index];
+                index++; // TODO ver de pasar a una sola expresion
+            } else {
+                state[i][j] = 0;
+            }
+        }
+    }
+
+    // ROUND 0
+    addRoundKey(state, subkeys[0]);
+
+    // ROUNDS 1 a NR - 1
+    for (int i = 1; i < nr; i++){
+        subBytes(state);
+        shiftRows(state);
+        mixColumns(state);
+        addRoundKey(state, subkeys[i]);
+    }
+
+    // FINAL ROUND
+    subBytes(state);
+    shiftRows(state);
+    addRoundKey(state, subkeys[nr]);
+
+
+    // retorno
+    index = 0;
+    // aca se invierten los indices porque la copia es columnar
+    // creo que no se puede usar memcpy porque la copia no es 1-1 si no que se traspone la matriz
+    for (int j = 0; j < BLOCK_DIM; j++){
+        for(int i = 0; i < BLOCK_DIM; i++){
+            out[index] = state[i][j];
+            index++;
+        }
+    }
 }

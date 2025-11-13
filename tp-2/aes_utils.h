@@ -14,20 +14,30 @@ extern unsigned char mix_col_matrix[BLOCK_DIM][BLOCK_DIM];
 
 
 
-// Multiplicación cerrada entre dos bytes   
+// Multiplicación cerrada entre dos bytes 
 unsigned char closedMult(unsigned char b1, unsigned char b2);
 
 
 
 
-// ====== OPERACIONES DEFINIDAS PARA EL CIFRADO ======
+// ====== ETAPAS DEL CIFRADO ======
 
 void addRoundKey(unsigned char state[BLOCK_DIM][BLOCK_DIM], unsigned char expanded_key[BLOCK_DIM][BLOCK_DIM]);
 void shiftRows(unsigned char state[BLOCK_DIM][BLOCK_DIM]);
 void subByte(unsigned char state[BLOCK_DIM][BLOCK_DIM]);
 void mixColumns(unsigned char state[BLOCK_DIM][BLOCK_DIM]);
 
-// ====== OPERACIONES DEFINIDAS PARA EL CIFRADO ======
+// ====== ETAPAS DEL CIFRADO ======
+
+// === Key schedule ===
+void generateKeySchedule(unsigned char *key, unsigned char subkeys[][BLOCK_DIM][BLOCK_DIM]);
+void generateKeySchedule256(unsigned char *key, unsigned char subkeys[15][BLOCK_DIM][BLOCK_DIM]);
+
+// Cifrado 
+// TODO: (capaz pasar a otro header)
+
+void cipher_block(unsigned char *in, int n, unsigned char subkeys[][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]);
+void cipher(unsigned char *in_text, int n, unsigned char *in_key, int keylen, unsigned char **out);
 
 
 
