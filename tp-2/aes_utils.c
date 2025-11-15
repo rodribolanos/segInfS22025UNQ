@@ -111,6 +111,120 @@ void mixColumns(unsigned char state[BLOCK_DIM][BLOCK_DIM]){
     memcpy(state, acc, BLOCK_DIM * BLOCK_DIM * sizeof(unsigned char)); // se podria usar un for tmb
 }
 
+
+void generateKeySchedule256(unsigned char *key, unsigned char subkeys[15][BLOCK_DIM][BLOCK_DIM]){
+
+    /*
+        32 bytes --> 32 caracteres de clave --> 256 bits 
+
+        
+        por cada round se toman 4 bloques de 4 bytes
+
+
+        256 bits y expandirlo en 15 sub arrays de 4 bloques de 4 bytes c/u  -> 15 subarrays de 128 bits -> 240 byte
+
+        60 bloques de 4 bytes
+
+        como la cantidad de bloques a completar son 60 y se va a iterar por todos, entonces para determinar el round actual se divide por 4 y para determinar la columna del bloque actual se usa el resto de esa div
+
+    */
+    int char_index = 0;
+
+    int block;
+    for(block = 0; block < 8; block++){
+
+        int round  = block >> 2;
+        /*
+            van a ir 16 bytes en un round y 16 en otro porque es la division por 4
+        */
+
+        int j = round & 0x03; // 0000 0011
+        /*
+          es el resto de la division anterior
+        */
+
+        for(int i = 0; i< 4; i++){
+            subkeys[round][i][j] = key[block * BLOCK_DIM + i];
+        }
+    }
+    
+
+    unsigned char rcon = 0x01;
+    
+    // Este es el ultimo byte guardado
+    int last_round = 1, last_col = 3;
+
+    for(block = 8; block < 60; block++){
+        int round = block >> 2; 
+        int j = block & 0x03;
+
+        int xor_last_round = round - 2; // como block arranca en 8 entonces round siempre es >= 2
+        int xor_last_col = j;
+
+
+        /*
+            block = 8 = 1000
+            1000 & 0111 = 0000
+            ! 0000 = 1111
+        */
+
+        if(!(block & 0x07)){ // Si el resto del bloque actual dividido 8 es 0
+            unsigned char temp[4] = {
+                s_box[subkeys[last_round][1][last_col]] ^ rcon,
+                s_box[subkeys[last_round][2][last_col]],
+                s_box[subkeys[last_round][3][last_col]],
+                s_box[subkeys[last_round][0][last_col]] 
+                // no vale la pena usar shiftrows aca, es un bardo
+            };
+
+            for (int i = 0; i < BLOCK_DIM; i++){
+                subkeys[round][i][j] = subkeys[xor_last_round][i][xor_last_col] ^ temp[i];
+            }
+
+            rcon = closedMult(rcon, 0x02); // se multiplica rcon por x
+
+          // la condicion de nk > 6 se ignora porque es 256
+        } else if (!(block & 0x03)){ // Idem pero con 4 
+            for(int i = 0; i < BLOCK_DIM; i++){
+                subkeys[round][i][j] = subkeys[xor_last_round][i][xor_last_col] ^ s_box[subkeys[last_round][i][last_col]];
+            }
+        } else {
+            for(int i = 0; i < BLOCK_DIM; i++){
+                subkeys[round][i][j] = subkeys[xor_last_round][i][xor_last_col] ^ subkeys[last_round][i][last_col];
+            }
+        }
+
+        last_round = round;
+        last_col = j;
+        // estos dos serian el w[i - 1]
+    }
+    /*
+    pseudocodigo del paper de AES
+    procedure KEY EXPANSION (key)
+        i ← 0
+        while i ≤ Nk − 1 do
+            w[i] ← key[4 ∗ i..4 ∗ i + 3]
+            i ← i + 1
+        end while . When the loop concludes, i = Nk.
+        while i ≤ 4 ∗ Nr + 3 do
+            temp ← w[i − 1]
+            if i mod Nk = 0 then
+                temp ← SUB WORD(R OT W ORD(temp)) ⊕ Rcon[i/Nk]
+            else if Nk > 6 and i mod Nk = 4 then
+                temp ← SUB WORD(temp)
+            end if
+            w[i] ← w[i − Nk] ⊕ temp
+            i ← i + 1
+        end while
+        return w
+    end procedure
+    
+    
+    */
+}
+
+
+
 // PRECOND: La key se expandió en subkeys por medio del algoritmo
 void cipher_block(unsigned char *in_text, int n, unsigned char subkeys[][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]){
     
@@ -122,7 +236,7 @@ void cipher_block(unsigned char *in_text, int n, unsigned char subkeys[][BLOCK_D
         for(int j = 0; j < BLOCK_DIM; j++){
             if(index < n){
                 state[i][j] = in_text[index];
-                index++; // TODO ver de pasar a una sola expresion
+                index++;
             } else {
                 state[i][j] = 0;
             }

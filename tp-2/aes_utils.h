@@ -4,10 +4,11 @@
 
 #define BLOCK_LEN 16 // Tamaño total del bloque de bytes
 #define BLOCK_DIM 4 // Dimension del bloque de bytes
+#define AES_256_NR 14
 
 #define AES_PRIMITIVE 0x11b // 0001 0001 1011  x^8+x^4+x^3+x+1 primitivo
 
-// Matriz de sustitución con el inverso multiplicativo de cada valor dentro del cuerpo de 8 bits 
+// Tabla de busqueda del inverso multiplicativo de cada valor dentro del cuerpo de 8 bits 
 extern unsigned char s_box[256];
 // Matriz de multiplicación al momento de mezclar las columnas del bloque 
 extern unsigned char mix_col_matrix[BLOCK_DIM][BLOCK_DIM];
