@@ -77,7 +77,7 @@ void addRoundKey(unsigned char state[BLOCK_DIM][BLOCK_DIM], unsigned char expand
 }
 
 void subBytes(unsigned char state[BLOCK_DIM][BLOCK_DIM]){
-    // sustitucion de byte por el inverso multiplicativo
+    // sustitucion de byte por el inverso en la tabla
     for(int i = 0; i < BLOCK_DIM; i++){
         for(int j = 0; j < BLOCK_DIM; j++){
             state[i][j] = s_box[state[i][j]]; 
@@ -275,10 +275,10 @@ int cipher(unsigned char *in_text, int n, unsigned char *in_key, int keylen, uns
         int padding_extra_block = nmbBlocks * BLOCK_LEN;
         // cifrar el bloque extra de primera
         cipher_block(in_text + padding_extra_block, extra, subkeys, AES_256_NR,  *out + padding_extra_block);
+    } else {
+        *out = malloc(nmbBlocks * BLOCK_LEN * sizeof(unsigned char));
     }
 
-    *out = malloc(nmbBlocks * BLOCK_LEN * sizeof(unsigned char));
-     
     for(int i = 0; i < nmbBlocks; i++){
         cipher_block(in_text + (i * BLOCK_LEN), BLOCK_LEN, subkeys, AES_256_NR,  *out + (i * BLOCK_LEN));
     }

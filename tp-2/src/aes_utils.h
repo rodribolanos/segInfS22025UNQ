@@ -6,7 +6,7 @@
 #define BLOCK_DIM 4 // Dimension del bloque de bytes
 #define AES_256_NR 14
 
-#define AES_PRIMITIVE 0x11b // 0001 0001 1011  x^8+x^4+x^3+x+1 primitivo
+#define AES_PRIMITIVE 0x1b // 0001 0001 1011  x^8+x^4+x^3+x+1 es el primitivo, pero se truca el primer 1 por lo que queda 1b
 
 // Tabla de busqueda del inverso multiplicativo de cada valor dentro del cuerpo de 8 bits 
 extern unsigned char s_box[256];
