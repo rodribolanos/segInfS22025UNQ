@@ -254,8 +254,8 @@ void cipher_block(unsigned char *in_text, int n, unsigned char subkeys[][BLOCK_D
     unsigned char state[BLOCK_DIM][BLOCK_DIM];
     
     int index = 0;
-    for(int i = 0; i < BLOCK_DIM; i++){
-        for(int j = 0; j < BLOCK_DIM; j++){
+    for(int j = 0; j < BLOCK_DIM; j++){
+        for(int i = 0; i < BLOCK_DIM; i++){
             if(index < n){
                 state[i][j] = in_text[index];
                 index++;
