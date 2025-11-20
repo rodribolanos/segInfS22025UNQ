@@ -16,7 +16,15 @@ void printStr(const unsigned char *out, int len){
     printf("\n");
 }
 
-
+/*
+    TODO:
+        - ver de implementar otros modos de encriptacion: 
+            actualmente el block cipher es ECB pero se puede llegar a 
+            hacer CBC y CTR
+        - leer archivos para encriptar y ver de escribir la salida en un 
+            file
+        - manejar mejro los numeros "hardcodeados"
+*/
 int main(int argc, char* argv[]){
 
     unsigned char *text = "hola.-E";
