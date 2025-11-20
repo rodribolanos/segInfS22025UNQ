@@ -1,0 +1,1 @@
+gcc -o main ./main.c ./aes_utils.c ./array_rotation.c
