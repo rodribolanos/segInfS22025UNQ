@@ -58,7 +58,7 @@ void inv_mixColumns(unsigned char state[BLOCK_DIM][BLOCK_DIM]);
 
 // Descifrado
 void inv_cipher_block(unsigned char *in, unsigned char subkeys[][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]);
-int inv_cipher(unsigned char *in_cypher, int nmbBlocks, unsigned char *in_key, int keylen, unsigned char **out);
+int inv_cipher(unsigned char *in_cypher, int n, unsigned char *in_key, int keylen, unsigned char **out);
 
 
 

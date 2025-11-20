@@ -19,21 +19,21 @@ void printStr(const unsigned char *out, int len){
 
 int main(int argc, char* argv[]){
 
-    unsigned char text[16] = "0123456789ABCDEF";
+    unsigned char *text = "hola.-E";
 
-    unsigned char key[33] = "0123456789ABCDEF0123456789ABCDEF";
+    unsigned char key[32] = "0123456789ABCDEF0123456789ABCDEF";
     unsigned char *out = NULL;
 
-    int nmbBlocks = cipher(text, 16, key, 32, &out);
+    int outlen = cipher(text, 8, key, 32, &out);
 
-    printf("Texto cifrado: ");
+    printf("Texto ENCRIPTADO: ");
     printHex(out, 16); 
-    printf("Bloques: %d\n", nmbBlocks);
+    printf("Longitud del cifrado: %d\n", outlen);
 
     unsigned char *out_inv = NULL;
-    int outlen_inv = inv_cipher(out, nmbBlocks, key, 32, &out_inv);
+    int outlen_inv = inv_cipher(out, outlen, key, 32, &out_inv);
 
-    printf("Texto descifrado: ");
-    printStr(out_inv, 16);
-    printf("Longitud: %d\n", outlen_inv);
+    printf("Texto DESENCRIPTADO: ");
+    printStr(out_inv, outlen_inv);
+    printf("Longitud del original: %d\n", outlen_inv);
 }
