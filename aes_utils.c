@@ -320,7 +320,7 @@ int cipher(unsigned char *in_text, int n, unsigned char *in_key, int keylen, uns
 
     free(subkeys);
 
-    return outLen;
+    return nmbBlocks;
 }
 
 // ================= CIFRADO =================
@@ -367,4 +367,63 @@ void inv_mixColumns(unsigned char state[BLOCK_DIM][BLOCK_DIM]){
 
 // ================= ETAPAS DESENCRIPTACION =================
 
+
+
+void inv_cipher_block(unsigned char *in, unsigned char subkeys[][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]){
+    unsigned char state[BLOCK_DIM][BLOCK_DIM];
+
+    int index = 0;
+    for(int j = 0; j < BLOCK_DIM; j++){
+        for(int i = 0; i < BLOCK_DIM; i++){
+            state[i][j] = in[index];
+            index++;
+        }
+    }
+
+    // Inverso del round nr
+
+    addRoundKey(state, subkeys[nr]);
+    inv_shiftRows(state);
+    inv_subByte(state);
+
+    // Inversos de nr-1 a 1
+    for(int i = nr - 1; i > 0; i--){
+        addRoundKey(state, subkeys[i]);
+        inv_mixColumns(state);
+        inv_shiftRows(state);
+        inv_subByte(state);
+    }
+
+    // Inverso de 0
+    addRoundKey(state, subkeys[0]);
+
+    index = 0;
+
+    for(int j = 0; j < BLOCK_DIM; j++){
+        for(int i = 0; i < BLOCK_DIM; i++){
+            out[index] = state[i][j];
+            index++;
+        }
+    }
+
+
+}
+
+int inv_cipher(unsigned char *in_cypher, int nmbBlocks, unsigned char *in_key, int keylen, unsigned char **out){
+
+
+    unsigned char (*subkeys)[BLOCK_DIM][BLOCK_DIM] = malloc((AES_256_NR + 1) * sizeof(unsigned char[BLOCK_DIM][BLOCK_DIM]));
+
+    generateKeySchedule256(in_key, subkeys);
+
+    *out = malloc(nmbBlocks * BLOCK_LEN * sizeof(unsigned char));
+
+    for(int i = 0; i < nmbBlocks; i++){
+        inv_cipher_block(in_cypher + (i * BLOCK_LEN), subkeys, AES_256_NR,  *out + (i * BLOCK_LEN) );
+    }
+
+    free(subkeys);
+
+    return nmbBlocks * BLOCK_LEN; // TODO: agregar manejo de padding
+}
 
