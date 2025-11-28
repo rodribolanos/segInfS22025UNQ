@@ -1,3 +1,6 @@
 *.exe
 *.o
 *.bin
+*.txt
+build/
+input/

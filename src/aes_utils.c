@@ -291,7 +291,7 @@ void cipher_block(unsigned char *in_text, int n, unsigned char subkeys[][BLOCK_D
 }
 
 
-int cipher(unsigned char *in_text, int n, unsigned char *in_key, int keylen, unsigned char **out){
+int cipher(unsigned char *in_text, int n, unsigned char *in_key, unsigned char **out){
     unsigned char (*subkeys)[BLOCK_DIM][BLOCK_DIM] = malloc((AES_256_NR + 1) * sizeof(unsigned char[BLOCK_DIM][BLOCK_DIM]));
     generateKeySchedule256(in_key, subkeys);
 
@@ -399,7 +399,7 @@ void inv_cipher_block(unsigned char *in, unsigned char subkeys[][BLOCK_DIM][BLOC
 
 }
 
-int inv_cipher(unsigned char *in_cypher, int n, unsigned char *in_key, int keylen, unsigned char **out){
+int inv_cipher(unsigned char *in_cypher, int n, unsigned char *in_key, unsigned char **out){
 
     unsigned char (*subkeys)[BLOCK_DIM][BLOCK_DIM] = malloc((AES_256_NR + 1) * sizeof(unsigned char[BLOCK_DIM][BLOCK_DIM]));
 
@@ -431,6 +431,6 @@ int inv_cipher(unsigned char *in_cypher, int n, unsigned char *in_key, int keyle
     memcpy(*out, paddedOut, (nmbBlocks * BLOCK_LEN - nmbPadding) * sizeof(unsigned char));
     free(paddedOut);
 
-    return nmbBlocks * BLOCK_LEN - nmbPadding; // TODO: agregar manejo de padding
+    return nmbBlocks * BLOCK_LEN - nmbPadding; 
 }
 

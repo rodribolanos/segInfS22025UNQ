@@ -1,1 +1,1 @@
-gcc -o debug ./main.c ./aes_utils.c ./array_rotation.c -g -O0
+gcc -o debug ./src/main.c ./src/aes_utils.c ./src/array_rotation.c-g -O0

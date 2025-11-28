@@ -48,9 +48,9 @@ int main(int argc, char** argv){
     unsigned char *key = "00112233445566778899AABBCCDDEEFF";
     unsigned char *out = NULL;
 
-    int outlen = cipher(text, 16, key, 32, &out);
+    int outlen = cipher(text, 15, key, &out);
 
-    char* output_ext = ".tmp.bin";
+    char* output_ext = ".bin";
 
     int input_filename_len = strlen(input_filename);
     int output_ext_len = strlen(output_ext);
@@ -82,7 +82,7 @@ int main(int argc, char** argv){
     printf("Longitud del cifrado: %d\n", outlen);
 
     unsigned char *out_inv = NULL;
-    int outlen_inv = inv_cipher(out, outlen, key, 32, &out_inv);
+    int outlen_inv = inv_cipher(out, outlen, key, &out_inv);
 
     printf("Texto descifrado: %s\n", out_inv);
 
