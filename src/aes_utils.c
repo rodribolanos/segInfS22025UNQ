@@ -256,12 +256,8 @@ void cipher_block(unsigned char *in_text, int n, unsigned char subkeys[][BLOCK_D
     int index = 0;
     for(int j = 0; j < BLOCK_DIM; j++){
         for(int i = 0; i < BLOCK_DIM; i++){
-            if(index < n){
-                state[i][j] = in_text[index];
+                state[i][j] =   index < n ? in_text[index] : BLOCK_LEN - n;
                 index++;
-            } else {
-                state[i][j] = 0;
-            }
         }
     }
 
@@ -295,32 +291,26 @@ void cipher_block(unsigned char *in_text, int n, unsigned char subkeys[][BLOCK_D
 }
 
 
-int cipher(unsigned char *in_text, int n, unsigned char *in_key, int keylen, unsigned char **out){
+int cipher(unsigned char *in_text, int n, unsigned char *in_key, unsigned char **out){
     unsigned char (*subkeys)[BLOCK_DIM][BLOCK_DIM] = malloc((AES_256_NR + 1) * sizeof(unsigned char[BLOCK_DIM][BLOCK_DIM]));
     generateKeySchedule256(in_key, subkeys);
 
-    int nmbBlocks = n / BLOCK_LEN;
+    int nmbBlocks = n / BLOCK_LEN + 1; // +1 por el bloque de padding
+    // para determinar que se puede descifrar el padding entonces siempre se asume que el ultimo bloque es padding por lo que se agrega uno en caso de que sean bloques completos
     int extra = n & 0x0F; // El resto por el bloque final incompleto
     
-    int outLen = nmbBlocks * BLOCK_LEN;
-
-    if(extra){
-        *out = malloc((nmbBlocks + 1) * BLOCK_LEN * sizeof(unsigned char));
-        outLen += BLOCK_LEN;
-        int padding_extra_block = nmbBlocks * BLOCK_LEN;
-        // cifrar el bloque extra de primera
-        cipher_block(in_text + padding_extra_block, extra, subkeys, AES_256_NR,  *out + padding_extra_block);
-    } else {
-        *out = malloc(nmbBlocks * BLOCK_LEN * sizeof(unsigned char));
-    }
+    int outlen = nmbBlocks * BLOCK_LEN;
+    *out = malloc(outlen * sizeof(unsigned char));
 
     for(int i = 0; i < nmbBlocks; i++){
-        cipher_block(in_text + (i * BLOCK_LEN), BLOCK_LEN, subkeys, AES_256_NR,  *out + (i * BLOCK_LEN));
+        int len = i < nmbBlocks - 1? BLOCK_LEN : extra; // longitud del bloque actual a cifrar, asegurandose de no comerse el padding
+
+        cipher_block(in_text + (i * BLOCK_LEN), len, subkeys, AES_256_NR,  *out + (i * BLOCK_LEN));
     }
 
     free(subkeys);
 
-    return nmbBlocks;
+    return outlen;
 }
 
 // ================= CIFRADO =================
@@ -409,21 +399,38 @@ void inv_cipher_block(unsigned char *in, unsigned char subkeys[][BLOCK_DIM][BLOC
 
 }
 
-int inv_cipher(unsigned char *in_cypher, int nmbBlocks, unsigned char *in_key, int keylen, unsigned char **out){
-
+int inv_cipher(unsigned char *in_cypher, int n, unsigned char *in_key, unsigned char **out){
 
     unsigned char (*subkeys)[BLOCK_DIM][BLOCK_DIM] = malloc((AES_256_NR + 1) * sizeof(unsigned char[BLOCK_DIM][BLOCK_DIM]));
 
     generateKeySchedule256(in_key, subkeys);
 
-    *out = malloc(nmbBlocks * BLOCK_LEN * sizeof(unsigned char));
+
+
+
+    int nmbBlocks = n / BLOCK_LEN;
+    // int extra = n & 0x0F;
+
+
+    // if(extra){
+    //     nmbBlocks++;
+    // }
+
+    unsigned char *paddedOut = malloc(nmbBlocks * BLOCK_LEN * sizeof(unsigned char));
 
     for(int i = 0; i < nmbBlocks; i++){
-        inv_cipher_block(in_cypher + (i * BLOCK_LEN), subkeys, AES_256_NR,  *out + (i * BLOCK_LEN) );
+        inv_cipher_block(in_cypher + (i * BLOCK_LEN), subkeys, AES_256_NR,  paddedOut + (i * BLOCK_LEN) );
     }
 
     free(subkeys);
 
-    return nmbBlocks * BLOCK_LEN; // TODO: agregar manejo de padding
+    unsigned char nmbPadding = paddedOut[nmbBlocks * BLOCK_LEN - 1]; // Este es el char que representa la cantidad de bytes de padding 
+ 
+    *out = malloc((nmbBlocks * BLOCK_LEN - nmbPadding) * sizeof(unsigned char));
+
+    memcpy(*out, paddedOut, (nmbBlocks * BLOCK_LEN - nmbPadding) * sizeof(unsigned char));
+    free(paddedOut);
+
+    return nmbBlocks * BLOCK_LEN - nmbPadding; 
 }
 
