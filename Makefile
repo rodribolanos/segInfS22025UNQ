@@ -17,7 +17,7 @@ OBJ     := $(SRC:$(SRC_DIR)/%.c=$(BUILD)/%.o)
 DEPS    := $(OBJ:.o=.d)
 
 # Executable at root
-TARGET  := program
+TARGET  := aes
 
 # Default rule
 all: $(TARGET)
