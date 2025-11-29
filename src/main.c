@@ -3,17 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-void printHex(const unsigned char *buf, int len) {
-    for (int i = 0; i < len; i++)
-        printf("%02x", buf[i]);
-    printf("\n");
-}
-
 void exit_bad_usage(){
     fprintf(stderr,
     "Comandos:\n"
-            "\t-e keyfile inputfile [output] para encriptar\n"
-            "\t-d keyfile inputfile [output] para desencriptar\n");
+            "\t-e keyfile inputfile outputfile para encriptar\n"
+            "\t-d keyfile inputfile outputfile para desencriptar\n");
     exit(EXIT_FAILURE);
 }
 
@@ -31,7 +25,7 @@ static void read_key(const char* key_path, unsigned char key[32]){
     fclose(key_file);
 
     if(keylen != 32){
-        fprintf(stderr, "La key debe tener una longitud exacta de 32 caracteres/bytes");
+        fprintf(stderr, "La key debe tener una longitud exacta de 32 caracteres/bytes\n");
         exit(EXIT_FAILURE);
     }
 
@@ -51,7 +45,7 @@ void process_encrypt(FILE *in, FILE *out,
 
     if (n > 0) {
         unsigned char *trailing_block = NULL;
-        int out_n = cipher(block, n, NULL, &trailing_block);  
+        int out_n = cipher(block, n, subkeys, &trailing_block);  
         fwrite(trailing_block, 1, out_n, out);
         free(trailing_block);
     }
@@ -124,7 +118,7 @@ int main(int argc, char** argv){
 
     if(strcmp(argv[1], "-e") == 0){
         is_encrypting = 1;
-    } else if(strcmp(argv[1], "-d") != 0){  // en este caso paso un arg distinto de desencriptar
+    } else if(strcmp(argv[1], "-d") != 0){  // en este caso pasó un arg distinto de desencriptar
         exit_bad_usage();
     }
 
@@ -142,13 +136,13 @@ int main(int argc, char** argv){
     FILE *in_file  = fopen(in_path, "rb");
     if (!in_file) { 
         perror("input"); 
-        exit(1); 
+        exit(EXIT_FAILURE); 
     }
 
     FILE *out_file = fopen(out_path, "wb");
     if (!out_file) { 
         perror("output");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     if(is_encrypting){
