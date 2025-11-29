@@ -42,8 +42,8 @@ void generateKeySchedule256(unsigned char *key, unsigned char subkeys[15][BLOCK_
 
 
 // Cifrado 
-void cipher_block(unsigned char *in, int n, unsigned char subkeys[][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]);
-int cipher(unsigned char *in_text, int n, unsigned char *in_key, unsigned char **out);
+void cipher_block(unsigned char *in, int n, unsigned char subkeys[15][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]);
+int cipher(unsigned char *in_text, int n, unsigned char subkeys[15][BLOCK_DIM][BLOCK_DIM], unsigned char **out);
 
 
 
@@ -57,8 +57,8 @@ void inv_mixColumns(unsigned char state[BLOCK_DIM][BLOCK_DIM]);
 
 
 // Descifrado
-void inv_cipher_block(unsigned char *in, unsigned char subkeys[][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]);
-int inv_cipher(unsigned char *in_cypher, int n, unsigned char *in_key, unsigned char **out);
+void inv_cipher_block(unsigned char *in, unsigned char subkeys[15][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]);
+int inv_cipher(unsigned char *in_cypher, int n, unsigned char subkeys[15][BLOCK_DIM][BLOCK_DIM], unsigned char **out);
 
 
 

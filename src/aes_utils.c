@@ -30,6 +30,7 @@ unsigned char mix_col_matrix[BLOCK_DIM][BLOCK_DIM] = {
     { 0x01, 0x01, 0x02, 0x03 }, 
     { 0x03, 0x01, 0x01, 0x02 } 
 };
+
 unsigned char inv_s_box[256] = {
     0x52,   0x09,   0x6a,   0xd5,   0x30,   0x36,   0xa5,   0x38,   0xbf,   0x40,   0xa3,   0x9e,   0x81,   0xf3,   0xd7,   0xfb,
     0x7c,   0xe3,   0x39,   0x82,   0x9b,   0x2f,   0xff,   0x87,   0x34,   0x8e,   0x43,   0x44,   0xc4,   0xde,   0xe9,   0xcb,
@@ -248,7 +249,7 @@ void generateKeySchedule256(unsigned char *key, unsigned char subkeys[15][BLOCK_
 
 // ================= CIFRADO =================
 // PRECOND: La key se expandió en subkeys por medio del algoritmo
-void cipher_block(unsigned char *in_text, int n, unsigned char subkeys[][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]){
+void cipher_block(unsigned char *in_text, int n, unsigned char subkeys[15][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]){
     
     // SETUP 
     unsigned char state[BLOCK_DIM][BLOCK_DIM];
@@ -291,9 +292,7 @@ void cipher_block(unsigned char *in_text, int n, unsigned char subkeys[][BLOCK_D
 }
 
 
-int cipher(unsigned char *in_text, int n, unsigned char *in_key, unsigned char **out){
-    unsigned char (*subkeys)[BLOCK_DIM][BLOCK_DIM] = malloc((AES_256_NR + 1) * sizeof(unsigned char[BLOCK_DIM][BLOCK_DIM]));
-    generateKeySchedule256(in_key, subkeys);
+int cipher(unsigned char *in_text, int n, unsigned char subkeys[15][BLOCK_DIM][BLOCK_DIM], unsigned char **out){
 
     int nmbBlocks = n / BLOCK_LEN + 1; // +1 por el bloque de padding
     // para determinar que se puede descifrar el padding entonces siempre se asume que el ultimo bloque es padding por lo que se agrega uno en caso de que sean bloques completos
@@ -307,8 +306,6 @@ int cipher(unsigned char *in_text, int n, unsigned char *in_key, unsigned char *
 
         cipher_block(in_text + (i * BLOCK_LEN), len, subkeys, AES_256_NR,  *out + (i * BLOCK_LEN));
     }
-
-    free(subkeys);
 
     return outlen;
 }
@@ -359,7 +356,7 @@ void inv_mixColumns(unsigned char state[BLOCK_DIM][BLOCK_DIM]){
 
 
 
-void inv_cipher_block(unsigned char *in, unsigned char subkeys[][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]){
+void inv_cipher_block(unsigned char *in, unsigned char subkeys[15][BLOCK_DIM][BLOCK_DIM], int nr, unsigned char out[BLOCK_LEN]){
     unsigned char state[BLOCK_DIM][BLOCK_DIM];
 
     int index = 0;
@@ -399,30 +396,15 @@ void inv_cipher_block(unsigned char *in, unsigned char subkeys[][BLOCK_DIM][BLOC
 
 }
 
-int inv_cipher(unsigned char *in_cypher, int n, unsigned char *in_key, unsigned char **out){
-
-    unsigned char (*subkeys)[BLOCK_DIM][BLOCK_DIM] = malloc((AES_256_NR + 1) * sizeof(unsigned char[BLOCK_DIM][BLOCK_DIM]));
-
-    generateKeySchedule256(in_key, subkeys);
-
-
-
+int inv_cipher(unsigned char *in_cipher, int n, unsigned char subkeys[15][BLOCK_DIM][BLOCK_DIM], unsigned char **out){
 
     int nmbBlocks = n / BLOCK_LEN;
-    // int extra = n & 0x0F;
-
-
-    // if(extra){
-    //     nmbBlocks++;
-    // }
 
     unsigned char *paddedOut = malloc(nmbBlocks * BLOCK_LEN * sizeof(unsigned char));
 
     for(int i = 0; i < nmbBlocks; i++){
-        inv_cipher_block(in_cypher + (i * BLOCK_LEN), subkeys, AES_256_NR,  paddedOut + (i * BLOCK_LEN) );
+        inv_cipher_block(in_cipher + (i * BLOCK_LEN), subkeys, AES_256_NR,  paddedOut + (i * BLOCK_LEN) );
     }
-
-    free(subkeys);
 
     unsigned char nmbPadding = paddedOut[nmbBlocks * BLOCK_LEN - 1]; // Este es el char que representa la cantidad de bytes de padding 
  
